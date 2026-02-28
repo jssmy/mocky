@@ -319,6 +319,31 @@ function MockItem({
             {isDeleting && <Spinner />}
             Eliminar
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              const safeName = mock.name.trim().toLowerCase().replace(/\s+/g, "-") || "mock";
+              const exportData = {
+                mock,
+                exportedAt: new Date().toISOString(),
+              };
+              const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                type: "application/json;charset=utf-8",
+              });
+              const url = URL.createObjectURL(blob);
+              const anchor = document.createElement("a");
+              anchor.href = url;
+              anchor.download = `${safeName}.json`;
+              document.body.appendChild(anchor);
+              anchor.click();
+              document.body.removeChild(anchor);
+              URL.revokeObjectURL(url);
+            }}
+            className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
+          >
+            Exportar
+          </button>
         </div>
       )}
     </div>

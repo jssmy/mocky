@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ImportCurlModal } from "./components/postman/ImportCurlModal";
 import { MockEditor } from "./components/postman/MockEditor";
 import { SaveMockModal } from "./components/postman/SaveMockModal";
 import { Sidebar } from "./components/postman/Sidebar";
@@ -8,6 +9,7 @@ import { HttpMethod } from "./components/postman/enums/http-method.enum";
 import { RequestTab } from "./components/postman/enums/request-tab.enum";
 import type { KeyValueRow } from "./components/postman/interfaces/key-value-row.interface";
 import type { MockCollection, MockDefinition } from "./components/postman/interfaces/mock-definition.interface";
+import type { ParsedCurl } from "./components/postman/utils/parse-curl";
 import {
   cloneRows,
   makeRow,
@@ -42,6 +44,7 @@ export default function Home() {
   const [isBodyCollapsed, setIsBodyCollapsed] = useState(false);
   const [isTestCollapsed, setIsTestCollapsed] = useState(false);
   const [testResultTab, setTestResultTab] = useState<"body" | "headers">("body");
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Load collections from server
   const loadCollections = useCallback(async () => {
@@ -125,6 +128,69 @@ export default function Home() {
     setSelectedMockTitle("Nuevo Mock");
     setTestResult(null);
     setError(null);
+  };
+
+  const handleImportCurl = (parsed: ParsedCurl) => {
+    setMethod(parsed.method);
+    setPathInput(parsed.path);
+    setMatchParams(upsertTrailingEmptyRow(parsed.params));
+    setMatchHeaders(upsertTrailingEmptyRow(parsed.headers));
+    if (parsed.body) {
+      setResponseBody(parsed.body);
+    }
+    setSelectedMockId(null);
+    setSelectedMockTitle("Nuevo Mock (importado)");
+    setTestResult(null);
+    setError(null);
+    setIsImportModalOpen(false);
+  };
+
+  const handleImportJson = async (importedCollections: MockCollection[]) => {
+    // Merge imported collections with existing ones
+    // Collections with same name will be merged, otherwise added as new
+    const mergedCollections = [...collections];
+
+    for (const importedCol of importedCollections) {
+      const existingIndex = mergedCollections.findIndex(
+        (c) => c.name.toLowerCase() === importedCol.name.toLowerCase()
+      );
+
+      if (existingIndex >= 0) {
+        // Merge mocks into existing collection
+        const existing = mergedCollections[existingIndex];
+        const newMocks = importedCol.mocks.map((mock) => ({
+          ...mock,
+          id: crypto.randomUUID(),
+          collectionId: existing.id,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }));
+        mergedCollections[existingIndex] = {
+          ...existing,
+          mocks: [...existing.mocks, ...newMocks],
+        };
+      } else {
+        // Add as new collection with new IDs
+        const newColId = crypto.randomUUID();
+        const newMocks = importedCol.mocks.map((mock) => ({
+          ...mock,
+          id: crypto.randomUUID(),
+          collectionId: newColId,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }));
+        mergedCollections.push({
+          ...importedCol,
+          id: newColId,
+          mocks: newMocks,
+          createdAt: Date.now(),
+        });
+      }
+    }
+
+    setCollections(mergedCollections);
+    await saveCollections(mergedCollections);
+    setIsImportModalOpen(false);
   };
 
   const createCollection = async (name: string) => {
@@ -463,6 +529,13 @@ export default function Home() {
           <div className="flex gap-2">
             <button
               type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+            >
+              Importar
+            </button>
+            <button
+              type="button"
               onClick={clearForm}
               className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
             >
@@ -606,6 +679,14 @@ export default function Home() {
           onCancel={() => setIsSaveModalOpen(false)}
           onConfirm={handleSaveModalConfirm}
           onCreateCollection={createCollection}
+        />
+      )}
+
+      {isImportModalOpen && (
+        <ImportCurlModal
+          onCancel={() => setIsImportModalOpen(false)}
+          onImportCurl={handleImportCurl}
+          onImportJson={handleImportJson}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { MockCollection } from "./interfaces/mock-definition.interface";
 
 function Spinner() {
@@ -50,30 +50,25 @@ export function SaveMockModal({
   isCreatingCollection,
 }: SaveMockModalProps) {
   const [mockName, setMockName] = useState(initialName);
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(
-    collections.length > 0 ? collections[0].id : null
-  );
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
-
-  // When a new collection is added (e.g. created while modal is open), auto-select it
-  const prevCountRef = useRef(collections.length);
-  useEffect(() => {
-    if (collections.length > prevCountRef.current && collections.length > 0) {
-      // New collection prepended — select it
-      setSelectedCollectionId(collections[0].id);
-    }
-    prevCountRef.current = collections.length;
-  }, [collections]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(
+    collections.length > 0 ? collections[0].id : null
+  );
+  
+  // If no collection is selected but collections exist, select the first one
+  const effectiveSelectedId = selectedCollectionId && collections.some(c => c.id === selectedCollectionId)
+    ? selectedCollectionId
+    : collections.length > 0 ? collections[0].id : null;
 
   const filteredCollections = collections.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleConfirm = () => {
-    if (!selectedCollectionId || !mockName.trim()) return;
-    onConfirm(selectedCollectionId, mockName.trim());
+    if (!effectiveSelectedId || !mockName.trim()) return;
+    onConfirm(effectiveSelectedId, mockName.trim());
   };
 
   const handleCreateCollection = () => {
@@ -151,20 +146,20 @@ export function SaveMockModal({
                         className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors disabled:opacity-50 ${
                           index > 0 ? "border-t border-zinc-100" : ""
                         } ${
-                          selectedCollectionId === collection.id
+                          effectiveSelectedId === collection.id
                             ? "bg-orange-500 text-white"
                             : "bg-white text-zinc-700 hover:bg-zinc-50"
                         }`}
                       >
                         <span className="text-base leading-none">
-                          {selectedCollectionId === collection.id ? "▸" : " "}
+                          {effectiveSelectedId === collection.id ? "▸" : " "}
                         </span>
                         <span className="flex-1 truncate font-medium">
                           {collection.name}
                         </span>
                         <span
                           className={`text-xs ${
-                            selectedCollectionId === collection.id
+                            effectiveSelectedId === collection.id
                               ? "text-orange-100"
                               : "text-zinc-400"
                           }`}
@@ -238,7 +233,7 @@ export function SaveMockModal({
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={isLoading || !selectedCollectionId || !mockName.trim()}
+            disabled={isLoading || !effectiveSelectedId || !mockName.trim()}
             className="flex items-center gap-2 rounded bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
           >
             {isLoading && <Spinner />}
