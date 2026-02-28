@@ -2,6 +2,7 @@ import { useState } from "react";
 import { RenameModal } from "./RenameModal";
 import type { MockCollection, MockDefinition } from "./interfaces/mock-definition.interface";
 import { Spinner } from "./ui/Spinner";
+import { Logo } from "./ui/Logo";
 
 type SidebarProps = {
   collections: MockCollection[];
@@ -419,9 +420,8 @@ export function Sidebar({
   return (
     <>
       <aside className="hidden w-72 shrink-0 border-r border-zinc-200 bg-white lg:flex lg:flex-col">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <p className="text-sm font-semibold">🎭 Mocky</p>
-          <p className="text-xs text-zinc-500">Mock Server</p>
+        <div className="border-b border-zinc-200 px-4 py-4">
+          <Logo />
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
