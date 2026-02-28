@@ -1,10 +1,12 @@
+import Image from "next/image";
+
 export function Logo({ className = "" }: { className?: string }) {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <Image
-        src="/Gemini_Generated_Image_3c5l663c5l663c5l.webp"
+        src="/logo.webp"
         alt="Mocky Logo"
-        className="h-10 w-10 rounded-lg object-cover shadow"
+        className="w-10 rounded-lg object-cover"
         width={40}
         height={40}
         priority={false}
