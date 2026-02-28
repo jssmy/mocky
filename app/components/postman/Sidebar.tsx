@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { RenameModal } from "./RenameModal";
+import { DeleteModal } from "./DeleteModal";
 import type { MockCollection, MockDefinition } from "./interfaces/mock-definition.interface";
 import { Spinner } from "./ui/Spinner";
 import { Logo } from "./ui/Logo";
@@ -44,6 +45,7 @@ function CollectionItem({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const isDeletingCollection = loadingAction === `delete-collection:${collection.id}`;
 
@@ -53,14 +55,17 @@ function CollectionItem({
   };
 
   const handleDeleteCollection = () => {
-    const accepted = window.confirm(`¿Eliminar la colección "${collection.name}"?`);
+    setShowDeleteModal(true);
     setIsMenuOpen(false);
+  };
 
-    if (!accepted) {
-      return;
-    }
-
+  const handleConfirmDelete = () => {
     onDeleteCollection(collection.id);
+    setShowDeleteModal(false);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const handleExportCollection = () => {
@@ -85,86 +90,97 @@ function CollectionItem({
   };
 
   return (
-    <div className="space-y-2 rounded border border-zinc-200 p-2">
-      <div className="group flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => setIsExpanded((current) => !current)}
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
-          aria-expanded={isExpanded}
-        >
-          <span className="text-xs text-zinc-500">{isExpanded ? "▾" : "▸"}</span>
-          <span className="truncate text-xs font-semibold uppercase tracking-wide text-zinc-600">
-            {collection.name}
-          </span>
-          <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500">
-            {collection.mocks.length}
-          </span>
-        </button>
-
-        <div className="relative">
+    <>
+      <div className="space-y-2 rounded border border-zinc-200 p-2">
+        <div className="group flex items-center justify-between gap-2">
           <button
             type="button"
-            onClick={() => setIsMenuOpen((current) => !current)}
-            aria-label={`Opciones de ${collection.name}`}
-            className="shrink-0 rounded px-1 text-base leading-none text-zinc-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-zinc-100 focus:opacity-100"
+            onClick={() => setIsExpanded((current) => !current)}
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+            aria-expanded={isExpanded}
           >
-            ...
+            <span className="text-xs text-zinc-500">{isExpanded ? "▾" : "▸"}</span>
+            <span className="truncate text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              {collection.name}
+            </span>
+            <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500">
+              {collection.mocks.length}
+            </span>
           </button>
 
-          {isMenuOpen && (
-            <div className="absolute right-0 top-7 z-10 w-36 rounded border border-zinc-200 bg-white p-1 shadow-sm">
-              <button
-                type="button"
-                onClick={handleRenameCollection}
-                className="w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
-              >
-                Renombrar
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteCollection}
-                disabled={isDeletingCollection}
-                className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 flex items-center gap-1"
-              >
-                {isDeletingCollection && <Spinner />}
-                Eliminar
-              </button>
-              <button
-                type="button"
-                onClick={handleExportCollection}
-                className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
-              >
-                Exportar
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((current) => !current)}
+              aria-label={`Opciones de ${collection.name}`}
+              className="shrink-0 rounded px-1 text-base leading-none text-zinc-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-zinc-100 focus:opacity-100"
+            >
+              ...
+            </button>
 
-      {isExpanded &&
-        (collection.mocks.length === 0 ? (
-          <p className="rounded border border-dashed border-zinc-300 px-2 py-2 text-xs text-zinc-500">
-            Sin mocks. Crea uno con el formulario.
-          </p>
-        ) : (
-          <div className="space-y-1">
-            {collection.mocks.map((mock) => (
-              <MockItem
-                key={mock.id}
-                mock={mock}
-                loadingAction={loadingAction}
-                onRestoreMock={onRestoreMock}
-                onRenameMock={() => onOpenRenameMockModal(collection.id, mock)}
-                onDuplicateMock={() => onDuplicateMockInCollection(collection.id, mock.id)}
-                onDeleteMock={() => onDeleteMockInCollection(collection.id, mock.id)}
-                onToggleEnabled={() => onToggleMockEnabled(collection.id, mock.id)}
-                isActive={selectedMockId === mock.id}
-              />
-            ))}
+            {isMenuOpen && (
+              <div className="absolute right-0 top-7 z-10 w-36 rounded border border-zinc-200 bg-white p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={handleRenameCollection}
+                  className="w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
+                >
+                  Renombrar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteCollection}
+                  disabled={isDeletingCollection}
+                  className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 flex items-center gap-1"
+                >
+                  {isDeletingCollection && <Spinner />}
+                  Eliminar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportCollection}
+                  className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
+                >
+                  Exportar
+                </button>
+              </div>
+            )}
           </div>
-        ))}
-    </div>
+        </div>
+
+        {isExpanded &&
+          (collection.mocks.length === 0 ? (
+            <p className="rounded border border-dashed border-zinc-300 px-2 py-2 text-xs text-zinc-500">
+              Sin mocks. Crea uno con el formulario.
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {collection.mocks.map((mock) => (
+                <MockItem
+                  key={mock.id}
+                  mock={mock}
+                  loadingAction={loadingAction}
+                  onRestoreMock={onRestoreMock}
+                  onRenameMock={() => onOpenRenameMockModal(collection.id, mock)}
+                  onDuplicateMock={() => onDuplicateMockInCollection(collection.id, mock.id)}
+                  onDeleteMock={() => onDeleteMockInCollection(collection.id, mock.id)}
+                  onToggleEnabled={() => onToggleMockEnabled(collection.id, mock.id)}
+                  isActive={selectedMockId === mock.id}
+                />
+              ))}
+            </div>
+          ))}
+      </div>
+      {showDeleteModal && (
+        <DeleteModal
+          title="Eliminar colección"
+          description={`¿Eliminar la colección "${collection.name}"?`}
+          isLoading={isDeletingCollection}
+          onCancel={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
+    </>
   );
 }
 
