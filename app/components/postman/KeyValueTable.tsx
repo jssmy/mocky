@@ -3,11 +3,12 @@ import { makeRow, upsertTrailingEmptyRow } from "./utils";
 
 type KeyValueTableProps = {
   title: string;
+  description?: string;
   rows: KeyValueRow[];
   onChange: (rows: KeyValueRow[]) => void;
 };
 
-export function KeyValueTable({ title, rows, onChange }: KeyValueTableProps) {
+export function KeyValueTable({ title, description, rows, onChange }: KeyValueTableProps) {
   const updateRow = (id: string, patch: Partial<KeyValueRow>) => {
     const nextRows = rows.map((row) => (row.id === id ? { ...row, ...patch } : row));
     onChange(upsertTrailingEmptyRow(nextRows));
@@ -20,7 +21,10 @@ export function KeyValueTable({ title, rows, onChange }: KeyValueTableProps) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium text-zinc-700">{title}</p>
+      <div>
+        <p className="text-sm font-medium text-zinc-700">{title}</p>
+        {description && <p className="mt-0.5 text-xs text-zinc-500">{description}</p>}
+      </div>
       <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
         <div className="grid grid-cols-[84px_1fr_1fr_70px] border-b border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           <span>Activo</span>

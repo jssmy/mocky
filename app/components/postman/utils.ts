@@ -11,9 +11,6 @@ export const METHODS: HttpMethod[] = [
   HttpMethod.OPTIONS,
 ];
 
-export const STORAGE_HISTORY_KEY = "mocky_history_v1";
-export const STORAGE_COLLECTIONS_KEY = "mocky_collections_v1";
-
 export function makeRow(): KeyValueRow {
   return {
     id: crypto.randomUUID(),
@@ -21,36 +18,6 @@ export function makeRow(): KeyValueRow {
     value: "",
     enabled: true,
   };
-}
-
-export function buildQueryParams(rows: KeyValueRow[]) {
-  const params = new URLSearchParams();
-
-  for (const row of rows) {
-    const key = row.key.trim();
-    if (!row.enabled || !key) {
-      continue;
-    }
-
-    params.append(key, row.value);
-  }
-
-  return params;
-}
-
-export function buildHeaders(rows: KeyValueRow[]) {
-  const headers = new Headers();
-
-  for (const row of rows) {
-    const key = row.key.trim();
-    if (!row.enabled || !key) {
-      continue;
-    }
-
-    headers.set(key, row.value);
-  }
-
-  return headers;
 }
 
 export function upsertTrailingEmptyRow(rows: KeyValueRow[]) {

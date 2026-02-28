@@ -1,44 +1,76 @@
 import { useState } from "react";
 import { RenameModal } from "./RenameModal";
-import type { Collection } from "./interfaces/collection.interface";
-import type { SavedRequest } from "./interfaces/saved-request.interface";
+import type { MockCollection, MockDefinition } from "./interfaces/mock-definition.interface";
 
 type SidebarProps = {
-  collections: Collection[];
-  selectedRequestId: string | null;
-  onRestoreRequest: (request: SavedRequest) => void;
+  collections: MockCollection[];
+  selectedMockId: string | null;
+  loadingAction: string | null;
+  onRestoreMock: (mock: MockDefinition) => void;
   onCreateCollection: (name: string) => void;
-  onAddCurrentRequestToCollection: (collectionId: string) => void;
   onRenameCollection: (collectionId: string, nextName: string) => void;
   onDeleteCollection: (collectionId: string) => void;
-  onRenameRequestInCollection: (collectionId: string, requestId: string, nextName: string) => void;
-  onDuplicateRequestInCollection: (collectionId: string, requestId: string) => void;
-  onDeleteRequestInCollection: (collectionId: string, requestId: string) => void;
+  onRenameMockInCollection: (collectionId: string, mockId: string, nextName: string) => void;
+  onDuplicateMockInCollection: (collectionId: string, mockId: string) => void;
+  onDeleteMockInCollection: (collectionId: string, mockId: string) => void;
+  onToggleMockEnabled: (collectionId: string, mockId: string) => void;
+  onNewMock: () => void;
 };
+
+function Spinner({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={`animate-spin ${className}`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      width="12"
+      height="12"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
+    </svg>
+  );
+}
 
 function CollectionItem({
   collection,
-  onRestoreRequest,
-  onAddCurrentRequestToCollection,
+  onRestoreMock,
   onOpenRenameModal,
   onDeleteCollection,
-  onOpenRenameRequestModal,
-  onDuplicateRequestInCollection,
-  onDeleteRequestInCollection,
-  selectedRequestId,
+  onOpenRenameMockModal,
+  onDuplicateMockInCollection,
+  onDeleteMockInCollection,
+  onToggleMockEnabled,
+  selectedMockId,
+  loadingAction,
 }: {
-  collection: Collection;
-  onRestoreRequest: (request: SavedRequest) => void;
-  onAddCurrentRequestToCollection: (collectionId: string) => void;
-  onOpenRenameModal: (collection: Collection) => void;
+  collection: MockCollection;
+  onRestoreMock: (mock: MockDefinition) => void;
+  onOpenRenameModal: (collection: MockCollection) => void;
   onDeleteCollection: (collectionId: string) => void;
-  onOpenRenameRequestModal: (collectionId: string, request: SavedRequest) => void;
-  onDuplicateRequestInCollection: (collectionId: string, requestId: string) => void;
-  onDeleteRequestInCollection: (collectionId: string, requestId: string) => void;
-  selectedRequestId: string | null;
+  onOpenRenameMockModal: (collectionId: string, mock: MockDefinition) => void;
+  onDuplicateMockInCollection: (collectionId: string, mockId: string) => void;
+  onDeleteMockInCollection: (collectionId: string, mockId: string) => void;
+  onToggleMockEnabled: (collectionId: string, mockId: string) => void;
+  selectedMockId: string | null;
+  loadingAction: string | null;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const isDeletingCollection = loadingAction === `delete-collection:${collection.id}`;
 
   const handleRenameCollection = () => {
     setIsMenuOpen(false);
@@ -46,7 +78,7 @@ function CollectionItem({
   };
 
   const handleDeleteCollection = () => {
-    const accepted = window.confirm(`¿Eliminar la colección \"${collection.name}\"?`);
+    const accepted = window.confirm(`¿Eliminar la colección "${collection.name}"?`);
     setIsMenuOpen(false);
 
     if (!accepted) {
@@ -90,15 +122,9 @@ function CollectionItem({
           <span className="truncate text-xs font-semibold uppercase tracking-wide text-zinc-600">
             {collection.name}
           </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAddCurrentRequestToCollection(collection.id)}
-          aria-label={`Agregar request a ${collection.name}`}
-          className="shrink-0 rounded px-1 text-base font-semibold text-zinc-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-zinc-100 focus:opacity-100"
-        >
-          +
+          <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500">
+            {collection.mocks.length}
+          </span>
         </button>
 
         <div className="relative">
@@ -123,8 +149,10 @@ function CollectionItem({
               <button
                 type="button"
                 onClick={handleDeleteCollection}
-                className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
+                disabled={isDeletingCollection}
+                className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 flex items-center gap-1"
               >
+                {isDeletingCollection && <Spinner />}
                 Eliminar
               </button>
               <button
@@ -140,23 +168,23 @@ function CollectionItem({
       </div>
 
       {isExpanded &&
-        (collection.requests.length === 0 ? (
+        (collection.mocks.length === 0 ? (
           <p className="rounded border border-dashed border-zinc-300 px-2 py-2 text-xs text-zinc-500">
-            Sin requests.
+            Sin mocks. Crea uno con el formulario.
           </p>
         ) : (
           <div className="space-y-1">
-            {collection.requests.map((request) => (
-              <RequestItem
-                key={request.id}
-                request={request}
-                onRestoreRequest={onRestoreRequest}
-                onRenameRequest={() => onOpenRenameRequestModal(collection.id, request)}
-                onDuplicateRequest={() =>
-                  onDuplicateRequestInCollection(collection.id, request.id)
-                }
-                onDeleteRequest={() => onDeleteRequestInCollection(collection.id, request.id)}
-                isActive={selectedRequestId === request.id}
+            {collection.mocks.map((mock) => (
+              <MockItem
+                key={mock.id}
+                mock={mock}
+                loadingAction={loadingAction}
+                onRestoreMock={onRestoreMock}
+                onRenameMock={() => onOpenRenameMockModal(collection.id, mock)}
+                onDuplicateMock={() => onDuplicateMockInCollection(collection.id, mock.id)}
+                onDeleteMock={() => onDeleteMockInCollection(collection.id, mock.id)}
+                onToggleEnabled={() => onToggleMockEnabled(collection.id, mock.id)}
+                isActive={selectedMockId === mock.id}
               />
             ))}
           </div>
@@ -165,41 +193,80 @@ function CollectionItem({
   );
 }
 
-function RequestItem({
-  request,
-  onRestoreRequest,
-  onRenameRequest,
-  onDuplicateRequest,
-  onDeleteRequest,
+function MockItem({
+  mock,
+  loadingAction,
+  onRestoreMock,
+  onRenameMock,
+  onDuplicateMock,
+  onDeleteMock,
+  onToggleEnabled,
   isActive,
 }: {
-  request: SavedRequest;
-  onRestoreRequest: (request: SavedRequest) => void;
-  onRenameRequest: () => void;
-  onDuplicateRequest: () => void;
-  onDeleteRequest: () => void;
+  mock: MockDefinition;
+  loadingAction: string | null;
+  onRestoreMock: (mock: MockDefinition) => void;
+  onRenameMock: () => void;
+  onDuplicateMock: () => void;
+  onDeleteMock: () => void;
+  onToggleEnabled: () => void;
   isActive: boolean;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const isTogglingEnabled = loadingAction === `toggle-mock:${mock.id}`;
+  const isDuplicating = loadingAction === `duplicate-mock:${mock.id}`;
+  const isDeleting = loadingAction === `delete-mock:${mock.id}`;
 
   return (
     <div
-      className={`group/request relative flex items-start gap-1 rounded border px-2 py-2 ${
+      className={`group/mock relative flex items-start gap-1 rounded border px-2 py-2 ${
         isActive
           ? "border-zinc-400 bg-zinc-100"
-          : "border-zinc-200 hover:bg-zinc-50"
+          : mock.enabled
+          ? "border-zinc-200 hover:bg-zinc-50"
+          : "border-zinc-200 bg-zinc-50 opacity-60"
       }`}
     >
-      <button type="button" onClick={() => onRestoreRequest(request)} className="min-w-0 flex-1 text-left text-xs">
-        <p className="font-semibold text-zinc-700">{request.method}</p>
-        <p className="truncate text-zinc-500">{request.name || request.url || "Sin nombre"}</p>
+      <button
+        type="button"
+        onClick={() => onRestoreMock(mock)}
+        className="min-w-0 flex-1 text-left text-xs"
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+              mock.method === "GET"
+                ? "bg-green-100 text-green-700"
+                : mock.method === "POST"
+                ? "bg-blue-100 text-blue-700"
+                : mock.method === "PUT"
+                ? "bg-yellow-100 text-yellow-700"
+                : mock.method === "DELETE"
+                ? "bg-red-100 text-red-700"
+                : "bg-zinc-100 text-zinc-700"
+            }`}
+          >
+            {mock.method}
+          </span>
+          <span className="rounded bg-zinc-200 px-1 py-0.5 text-[10px] text-zinc-600">
+            {mock.responseStatus}
+          </span>
+          {!mock.enabled && (
+            <span className="rounded bg-red-100 px-1 py-0.5 text-[10px] text-red-600">
+              OFF
+            </span>
+          )}
+        </div>
+        <p className="mt-1 truncate font-mono text-zinc-500">{mock.path}</p>
+        <p className="truncate text-zinc-400">{mock.name}</p>
       </button>
 
       <button
         type="button"
         onClick={() => setIsMenuOpen((current) => !current)}
-        aria-label={`Opciones de request ${request.name}`}
-        className="rounded px-1 text-xs text-zinc-600 opacity-0 transition-opacity group-hover/request:opacity-100 hover:bg-zinc-100 focus:opacity-100"
+        aria-label={`Opciones de mock ${mock.name}`}
+        className="rounded px-1 text-xs text-zinc-600 opacity-0 transition-opacity group-hover/mock:opacity-100 hover:bg-zinc-100 focus:opacity-100"
       >
         ...
       </button>
@@ -208,32 +275,48 @@ function RequestItem({
         <div className="absolute right-0 top-8 z-20 w-32 rounded border border-zinc-200 bg-white p-1 shadow-sm">
           <button
             type="button"
+            disabled={isTogglingEnabled}
             onClick={() => {
               setIsMenuOpen(false);
-              onRenameRequest();
+              onToggleEnabled();
             }}
-            className="w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
+            className="w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 flex items-center gap-1"
+          >
+            {isTogglingEnabled && <Spinner />}
+            {mock.enabled ? "Desactivar" : "Activar"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              onRenameMock();
+            }}
+            className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
           >
             Renombrar
           </button>
           <button
             type="button"
+            disabled={isDuplicating}
             onClick={() => {
               setIsMenuOpen(false);
-              onDuplicateRequest();
+              onDuplicateMock();
             }}
-            className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
+            className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 flex items-center gap-1"
           >
+            {isDuplicating && <Spinner />}
             Duplicar
           </button>
           <button
             type="button"
+            disabled={isDeleting}
             onClick={() => {
               setIsMenuOpen(false);
-              onDeleteRequest();
+              onDeleteMock();
             }}
-            className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100"
+            className="mt-1 w-full rounded px-2 py-1 text-left text-xs text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 flex items-center gap-1"
           >
+            {isDeleting && <Spinner />}
             Eliminar
           </button>
         </div>
@@ -244,25 +327,29 @@ function RequestItem({
 
 export function Sidebar({
   collections,
-  selectedRequestId,
-  onRestoreRequest,
+  selectedMockId,
+  loadingAction,
+  onRestoreMock,
   onCreateCollection,
-  onAddCurrentRequestToCollection,
   onRenameCollection,
   onDeleteCollection,
-  onRenameRequestInCollection,
-  onDuplicateRequestInCollection,
-  onDeleteRequestInCollection,
+  onRenameMockInCollection,
+  onDuplicateMockInCollection,
+  onDeleteMockInCollection,
+  onToggleMockEnabled,
+  onNewMock,
 }: SidebarProps) {
   const [collectionName, setCollectionName] = useState("");
-  const [renameTarget, setRenameTarget] = useState<Collection | null>(null);
+  const [renameTarget, setRenameTarget] = useState<MockCollection | null>(null);
   const [renameValue, setRenameValue] = useState("");
-  const [renameRequestTarget, setRenameRequestTarget] = useState<{
+  const [renameMockTarget, setRenameMockTarget] = useState<{
     collectionId: string;
-    requestId: string;
+    mockId: string;
     currentName: string;
   } | null>(null);
-  const [renameRequestValue, setRenameRequestValue] = useState("");
+  const [renameMockValue, setRenameMockValue] = useState("");
+  
+  const isCreatingCollection = loadingAction === "create-collection";
 
   const createCollection = () => {
     const trimmed = collectionName.trim();
@@ -274,7 +361,7 @@ export function Sidebar({
     setCollectionName("");
   };
 
-  const openRenameModal = (collection: Collection) => {
+  const openRenameModal = (collection: MockCollection) => {
     setRenameTarget(collection);
     setRenameValue(collection.name);
   };
@@ -298,91 +385,118 @@ export function Sidebar({
     closeRenameModal();
   };
 
-  const openRenameRequestModal = (collectionId: string, request: SavedRequest) => {
-    setRenameRequestTarget({
+  const openRenameMockModal = (collectionId: string, mock: MockDefinition) => {
+    setRenameMockTarget({
       collectionId,
-      requestId: request.id,
-      currentName: request.name || request.url || "Request",
+      mockId: mock.id,
+      currentName: mock.name || mock.path || "Mock",
     });
-    setRenameRequestValue(request.name || request.url || "Request");
+    setRenameMockValue(mock.name || mock.path || "Mock");
   };
 
-  const closeRenameRequestModal = () => {
-    setRenameRequestTarget(null);
-    setRenameRequestValue("");
+  const closeRenameMockModal = () => {
+    setRenameMockTarget(null);
+    setRenameMockValue("");
   };
 
-  const submitRenameRequest = () => {
-    if (!renameRequestTarget) {
+  const submitRenameMock = () => {
+    if (!renameMockTarget) {
       return;
     }
 
-    const trimmed = renameRequestValue.trim();
+    const trimmed = renameMockValue.trim();
     if (!trimmed) {
       return;
     }
 
-    onRenameRequestInCollection(
-      renameRequestTarget.collectionId,
-      renameRequestTarget.requestId,
-      trimmed,
+    onRenameMockInCollection(
+      renameMockTarget.collectionId,
+      renameMockTarget.mockId,
+      trimmed
     );
-    closeRenameRequestModal();
+    closeRenameMockModal();
   };
 
   return (
     <>
       <aside className="hidden w-72 shrink-0 border-r border-zinc-200 bg-white lg:flex lg:flex-col">
-      <div className="border-b border-zinc-200 px-4 py-3">
-        <p className="text-sm font-semibold">My Workspace</p>
-      </div>
+        <div className="border-b border-zinc-200 px-4 py-3">
+          <p className="text-sm font-semibold">🎭 Mocky</p>
+          <p className="text-xs text-zinc-500">Mock Server</p>
+        </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Collections</p>
-          </div>
-
-          <div className="flex gap-2">
-            <input
-              value={collectionName}
-              onChange={(event) => setCollectionName(event.target.value)}
-              placeholder="Nueva colección"
-              className="h-8 flex-1 rounded border border-zinc-300 px-2 text-xs outline-none focus:border-zinc-500"
-            />
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="space-y-4">
             <button
               type="button"
-              onClick={createCollection}
-              className="rounded border border-zinc-200 px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+              onClick={onNewMock}
+              className="w-full rounded border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50"
             >
-              Crear
+              + Nuevo Mock
             </button>
-          </div>
 
-          {collections.length === 0 ? (
-            <p className="rounded border border-dashed border-zinc-300 px-3 py-2 text-xs text-zinc-500">
-              Crea una colección para agregar requests.
-            </p>
-          ) : (
             <div className="space-y-2">
-              {collections.map((collection) => (
-                <CollectionItem
-                  key={collection.id}
-                  collection={collection}
-                  onRestoreRequest={onRestoreRequest}
-                  onAddCurrentRequestToCollection={onAddCurrentRequestToCollection}
-                  onOpenRenameModal={openRenameModal}
-                  onDeleteCollection={onDeleteCollection}
-                  onOpenRenameRequestModal={openRenameRequestModal}
-                  onDuplicateRequestInCollection={onDuplicateRequestInCollection}
-                  onDeleteRequestInCollection={onDeleteRequestInCollection}
-                  selectedRequestId={selectedRequestId}
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Colecciones
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  value={collectionName}
+                  onChange={(event) => setCollectionName(event.target.value)}
+                  placeholder="Nueva colección"
+                  disabled={isCreatingCollection}
+                  className="h-8 flex-1 rounded border border-zinc-300 px-2 text-xs outline-none focus:border-zinc-500 disabled:opacity-50"
+                  onKeyDown={(e) => e.key === "Enter" && !isCreatingCollection && createCollection()}
                 />
-              ))}
+                <button
+                  type="button"
+                  onClick={createCollection}
+                  disabled={isCreatingCollection}
+                  className="rounded border border-zinc-200 px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 flex items-center gap-1"
+                >
+                  {isCreatingCollection && <Spinner />}
+                  Crear
+                </button>
+              </div>
+
+              {collections.length === 0 ? (
+                <p className="rounded border border-dashed border-zinc-300 px-3 py-2 text-xs text-zinc-500">
+                  Crea una colección para organizar tus mocks.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {collections.map((collection) => (
+                    <CollectionItem
+                      key={collection.id}
+                      collection={collection}
+                      loadingAction={loadingAction}
+                      onRestoreMock={onRestoreMock}
+                      onOpenRenameModal={openRenameModal}
+                      onDeleteCollection={onDeleteCollection}
+                      onOpenRenameMockModal={openRenameMockModal}
+                      onDuplicateMockInCollection={onDuplicateMockInCollection}
+                      onDeleteMockInCollection={onDeleteMockInCollection}
+                      onToggleMockEnabled={onToggleMockEnabled}
+                      selectedMockId={selectedMockId}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+
+        <div className="border-t border-zinc-200 px-4 py-3">
+          <p className="text-[10px] text-zinc-400">
+            Los mocks están disponibles en:
+          </p>
+          <p className="mt-1 font-mono text-[10px] text-zinc-500">
+            /api/mock/[tu-endpoint]
+          </p>
+        </div>
       </aside>
 
       {renameTarget && (
@@ -390,20 +504,22 @@ export function Sidebar({
           title="Renombrar colección"
           placeholder="Nombre de colección"
           value={renameValue}
+          isLoading={loadingAction === `rename-collection:${renameTarget.id}`}
           onChange={setRenameValue}
           onCancel={closeRenameModal}
           onConfirm={submitRename}
         />
       )}
 
-      {renameRequestTarget && (
+      {renameMockTarget && (
         <RenameModal
-          title="Renombrar request"
-          placeholder="Nombre de request"
-          value={renameRequestValue}
-          onChange={setRenameRequestValue}
-          onCancel={closeRenameRequestModal}
-          onConfirm={submitRenameRequest}
+          title="Renombrar mock"
+          placeholder="Nombre del mock"
+          value={renameMockValue}
+          isLoading={loadingAction === `rename-mock:${renameMockTarget.mockId}`}
+          onChange={setRenameMockValue}
+          onCancel={closeRenameMockModal}
+          onConfirm={submitRenameMock}
         />
       )}
     </>
