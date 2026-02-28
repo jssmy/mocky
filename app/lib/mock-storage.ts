@@ -119,7 +119,8 @@ export async function findMatchingMock(
     // More specific mocks (more matching criteria) get higher priority
     score += enabledParams.length + enabledHeaders.length;
 
-    if (score > bestScore) {
+    // Prefer this mock if: higher score, OR same score but more recently updated
+    if (score > bestScore || (score === bestScore && bestMatch && mock.updatedAt > bestMatch.updatedAt)) {
       bestScore = score;
       bestMatch = mock;
     }

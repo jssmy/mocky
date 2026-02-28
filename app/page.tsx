@@ -39,6 +39,9 @@ export default function Home() {
   // Track loading state for sidebar actions: "create-collection", "rename-collection:id", "delete-collection:id", etc.
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isBodyCollapsed, setIsBodyCollapsed] = useState(false);
+  const [isTestCollapsed, setIsTestCollapsed] = useState(false);
+  const [testResultTab, setTestResultTab] = useState<"body" | "headers">("body");
 
   // Load collections from server
   const loadCollections = useCallback(async () => {
@@ -370,6 +373,11 @@ export default function Home() {
       return;
     }
 
+    if (!selectedMockId) {
+      setError("Guarda el mock primero para probarlo. El test se ejecuta contra los mocks guardados.");
+      return;
+    }
+
     setIsTesting(true);
     setError(null);
     setTestResult(null);
@@ -395,6 +403,11 @@ export default function Home() {
         }
       }
 
+      // Send the selected mock ID so the API uses exactly this mock
+      if (selectedMockId) {
+        headers["X-Mocky-Test-Mock-Id"] = selectedMockId;
+      }
+
       const response = await fetch(testUrl, {
         method,
         headers,
@@ -411,6 +424,7 @@ export default function Home() {
         body,
         headers: responseHeadersArray,
       });
+      setIsTestCollapsed(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al probar el mock");
     } finally {
@@ -481,45 +495,106 @@ export default function Home() {
           onResponseHeadersChange={setResponseHeaders}
         />
 
-        <section className="min-h-0 flex-1 border-t border-zinc-200 bg-white p-4">
-          <div className="flex h-full flex-col rounded border border-zinc-200 bg-zinc-50">
-            <div className="border-b border-zinc-200 px-3 py-2">
-              <p className="text-sm font-medium text-zinc-700">Response Body (lo que devolverá el mock)</p>
+        <div className="flex min-h-0 flex-1 flex-col bg-white">
+          <div className={`flex flex-col border-t border-zinc-200 p-4 ${isBodyCollapsed ? "shrink-0" : "min-h-0 flex-1"}`}>
+            <div className="flex h-full flex-col rounded border border-zinc-200 bg-zinc-50">
+              <button
+                type="button"
+                onClick={() => setIsBodyCollapsed((v) => !v)}
+                className="flex items-center gap-2 border-b border-zinc-200 px-3 py-2 text-left hover:bg-zinc-100"
+              >
+                <span className="text-xs text-zinc-400">{isBodyCollapsed ? "▸" : "▾"}</span>
+                <p className="text-sm font-medium text-zinc-700">Response Body (lo que devolverá el mock)</p>
+              </button>
+              {!isBodyCollapsed && (
+                <textarea
+                  value={responseBody}
+                  onChange={(event) => setResponseBody(event.target.value)}
+                  placeholder='{"message": "Hello from mock!", "data": []}'
+                  className="flex-1 resize-none bg-white px-3 py-2 font-mono text-sm outline-none"
+                />
+              )}
             </div>
-            <textarea
-              value={responseBody}
-              onChange={(event) => setResponseBody(event.target.value)}
-              placeholder='{"message": "Hello from mock!", "data": []}'
-              className="flex-1 resize-none bg-white px-3 py-2 font-mono text-sm outline-none"
-            />
           </div>
-        </section>
 
-        {testResult && (
-          <section className="border-t border-zinc-200 bg-white p-4">
-            <div className="rounded border border-zinc-200 bg-zinc-50">
-              <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2">
-                <p className="text-sm font-medium text-zinc-700">Resultado del Test</p>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-semibold ${
-                    testResult.status >= 200 && testResult.status < 300
-                      ? "bg-green-100 text-green-800"
-                      : testResult.status >= 400
-                      ? "bg-red-100 text-red-800"
-                      : "bg-yellow-100 text-yellow-800"
-                  }`}
+          {testResult && (
+            <div className={`flex flex-col border-t border-zinc-200 p-4 ${isTestCollapsed ? "shrink-0" : "min-h-0 flex-1"}`}>
+              <div className="flex h-full flex-col rounded border border-zinc-200 bg-zinc-50">
+                <button
+                  type="button"
+                  onClick={() => setIsTestCollapsed((v) => !v)}
+                  className="flex w-full items-center gap-2 border-b border-zinc-200 px-3 py-2 text-left hover:bg-zinc-100"
                 >
-                  {testResult.status}
-                </span>
-              </div>
-              <div className="max-h-48 overflow-auto p-3">
-                <pre className="whitespace-pre-wrap font-mono text-xs text-zinc-700">
-                  {testResult.body}
-                </pre>
+                  <span className="text-xs text-zinc-400">{isTestCollapsed ? "▸" : "▾"}</span>
+                  <p className="flex-1 text-sm font-medium text-zinc-700">Resultado del Test</p>
+                  <span
+                    className={`rounded px-2 py-0.5 text-xs font-semibold ${
+                      testResult.status >= 200 && testResult.status < 300
+                        ? "bg-green-100 text-green-800"
+                        : testResult.status >= 400
+                        ? "bg-red-100 text-red-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {testResult.status}
+                  </span>
+                </button>
+                {!isTestCollapsed && (
+                  <>
+                    <div className="flex gap-2 border-b border-zinc-200 px-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setTestResultTab("body")}
+                        className={`border-b-2 px-1 pb-2 text-xs font-medium ${
+                          testResultTab === "body"
+                            ? "border-zinc-900 text-zinc-900"
+                            : "border-transparent text-zinc-500 hover:text-zinc-700"
+                        }`}
+                      >
+                        Body
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTestResultTab("headers")}
+                        className={`border-b-2 px-1 pb-2 text-xs font-medium ${
+                          testResultTab === "headers"
+                            ? "border-zinc-900 text-zinc-900"
+                            : "border-transparent text-zinc-500 hover:text-zinc-700"
+                        }`}
+                      >
+                        Headers ({testResult.headers.length})
+                      </button>
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-auto p-3">
+                      {testResultTab === "body" ? (
+                        <pre className="whitespace-pre-wrap font-mono text-xs text-zinc-700">
+                          {testResult.body}
+                        </pre>
+                      ) : (
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="border-b border-zinc-200">
+                              <th className="pb-2 pr-4 font-medium text-zinc-500">Key</th>
+                              <th className="pb-2 font-medium text-zinc-500">Value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {testResult.headers.map(([key, value], idx) => (
+                              <tr key={idx} className="border-b border-zinc-100">
+                                <td className="py-1.5 pr-4 font-mono text-zinc-700">{key}</td>
+                                <td className="py-1.5 font-mono text-zinc-600">{value}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-          </section>
-        )}
+          )}
+        </div>
       </main>
 
       {isSaveModalOpen && (

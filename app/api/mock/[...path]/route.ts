@@ -86,7 +86,23 @@ async function handleMockRequest(
   const queryParams = request.nextUrl.searchParams;
   
   try {
-    const mock = await findMatchingMock(method, pathname, queryParams, request.headers);
+    // If testing a specific mock from the UI, use that mock directly
+    const testMockId = request.headers.get("X-Mocky-Test-Mock-Id");
+    let mock: Awaited<ReturnType<typeof findMatchingMock>> = null;
+    
+    if (testMockId) {
+      const { readMockStorage } = await import("../../../lib/mock-storage");
+      const storage = await readMockStorage();
+      for (const collection of storage.collections) {
+        const found = collection.mocks.find((m) => m.id === testMockId);
+        if (found) {
+          mock = found;
+          break;
+        }
+      }
+    } else {
+      mock = await findMatchingMock(method, pathname, queryParams, request.headers);
+    }
     
     if (!mock) {
       return new NextResponse(

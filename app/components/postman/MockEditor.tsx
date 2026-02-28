@@ -111,10 +111,10 @@ export function MockEditor({
           <input
             type="number"
             min={0}
-            max={30000}
+            max={60000}
             step={100}
             value={responseDelay}
-            onChange={(event) => onResponseDelayChange(Math.max(0, Number(event.target.value)))}
+            onChange={(event) => onResponseDelayChange(Math.min(60000, Math.max(0, Number(event.target.value))))}
             className="w-20 text-right text-sm font-medium text-zinc-700 outline-none"
           />
           <span className="text-xs text-zinc-500">ms</span>
