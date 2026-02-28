@@ -17,102 +17,134 @@ interface JsonPreview {
   totalMocks: number;
 }
 
-// Helper type guards - moved outside component to avoid lint issues
-function isStorageFormat(data: unknown): data is { collections: MockCollection[] } {
+// JSON structure types
+type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+type JsonObject = Record<string, JsonValue>;
+
+interface StorageFormat {
+  collections: MockCollection[];
+  updatedAt?: number;
+}
+
+interface ExportedCollection {
+  collection: MockCollection;
+  exportedAt: string;
+}
+
+interface ExportedMock {
+  mock: MockDefinition;
+  exportedAt: string;
+}
+
+interface CollectionData {
+  id?: string;
+  name: string;
+  mocks: MockDefinition[];
+  createdAt?: number;
+}
+
+interface MockData {
+  method: string;
+  path: string;
+  name?: string;
+  [key: string]: JsonValue;
+}
+
+// Helper type guards with proper typing
+function isStorageFormat(data: JsonObject): data is StorageFormat {
+  return Array.isArray(data.collections);
+}
+
+function isCollection(data: JsonObject): data is CollectionData {
   return (
-    typeof data === "object" &&
-    data !== null &&
-    "collections" in data &&
-    Array.isArray((data as { collections: unknown }).collections)
+    typeof data.name === "string" &&
+    Array.isArray(data.mocks)
   );
 }
 
-function isCollection(data: unknown): data is MockCollection {
+function isExportedCollection(data: JsonObject): data is ExportedCollection {
   return (
-    typeof data === "object" &&
-    data !== null &&
-    "name" in data &&
-    "mocks" in data &&
-    Array.isArray((data as { mocks: unknown }).mocks)
+    typeof data.collection === "object" &&
+    data.collection !== null &&
+    typeof data.exportedAt === "string" &&
+    isCollection(data.collection as JsonObject)
   );
 }
 
-function isExportedCollection(data: unknown): data is { collection: MockCollection; exportedAt: string } {
+function isExportedMock(data: JsonObject): data is ExportedMock {
   return (
-    typeof data === "object" &&
-    data !== null &&
-    "collection" in data &&
-    "exportedAt" in data &&
-    isCollection((data as { collection: unknown }).collection)
+    typeof data.mock === "object" &&
+    data.mock !== null &&
+    typeof data.exportedAt === "string" &&
+    isMockDefinition(data.mock as JsonObject)
   );
 }
 
-function isExportedMock(data: unknown): data is { mock: MockDefinition; exportedAt: string } {
+function isMockDefinition(data: JsonObject): data is MockData {
   return (
-    typeof data === "object" &&
-    data !== null &&
-    "mock" in data &&
-    "exportedAt" in data &&
-    isMockDefinition((data as { mock: unknown }).mock)
-  );
-}
-
-function isMockDefinition(data: unknown): data is MockDefinition {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    "method" in data &&
-    "path" in data
+    typeof data.method === "string" &&
+    typeof data.path === "string"
   );
 }
 
 function extractCollections(data: unknown, timestamp: number): MockCollection[] {
+  // Type validation first
+  if (typeof data !== "object" || data === null) {
+    return [];
+  }
+
+  const jsonData = data as JsonObject;
+
   // Case 1: Full storage format { collections: [...] }
-  if (isStorageFormat(data)) {
-    return data.collections;
+  if (isStorageFormat(jsonData)) {
+    return jsonData.collections;
   }
 
   // Case 2: Single collection { id, name, mocks: [...] }
-  if (isCollection(data)) {
-    return [data];
+  if (isCollection(jsonData)) {
+    return [jsonData as MockCollection];
   }
 
   // Case 3: Array of collections
-  if (Array.isArray(data) && data.every(isCollection)) {
-    return data;
+  if (Array.isArray(data) && data.every((item): item is CollectionData => 
+    typeof item === "object" && item !== null && isCollection(item as JsonObject)
+  )) {
+    return data as MockCollection[];
   }
 
   // Case 4: Exported collection format { collection: {...}, exportedAt: ... }
-  if (isExportedCollection(data)) {
-    return [data.collection];
+  if (isExportedCollection(jsonData)) {
+    return [jsonData.collection];
   }
 
   // Case 5: Exported mock format { mock: {...}, exportedAt: ... }
-  if (isExportedMock(data)) {
+  if (isExportedMock(jsonData)) {
     return [{
       id: crypto.randomUUID(),
       name: "Mocks Importados",
-      mocks: [{ ...data.mock, id: crypto.randomUUID() }],
+      mocks: [{ ...jsonData.mock, id: crypto.randomUUID() } as MockDefinition],
       createdAt: timestamp,
     }];
   }
 
   // Case 6: Single mock definition
-  if (isMockDefinition(data)) {
+  if (isMockDefinition(jsonData)) {
     return [{
       id: crypto.randomUUID(),
       name: "Mocks Importados",
-      mocks: [{ ...data, id: crypto.randomUUID() }],
+      mocks: [{ ...jsonData, id: crypto.randomUUID() } as MockDefinition],
       createdAt: timestamp,
     }];
   }
 
   // Case 7: Array of mock definitions
-  if (Array.isArray(data) && data.every(isMockDefinition)) {
+  if (Array.isArray(data) && data.every((item): item is MockData => 
+    typeof item === "object" && item !== null && isMockDefinition(item as JsonObject)
+  )) {
     return [{
       id: crypto.randomUUID(),
       name: "Mocks Importados",
-      mocks: data.map(m => ({ ...m, id: crypto.randomUUID() })),
+      mocks: data.map(m => ({ ...m, id: crypto.randomUUID() } as MockDefinition)),
       createdAt: timestamp,
     }];
   }
