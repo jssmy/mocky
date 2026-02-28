@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DeleteCollectionModal } from "./DeleteCollectionModal";
 import { RenameModal } from "./RenameModal";
 import type { MockCollection, MockDefinition } from "./interfaces/mock-definition.interface";
 import { Spinner } from "./ui/Spinner";
@@ -46,6 +47,7 @@ function CollectionItem({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isDeletingCollection = loadingAction === `delete-collection:${collection.id}`;
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleRenameCollection = () => {
     setIsMenuOpen(false);
@@ -53,14 +55,13 @@ function CollectionItem({
   };
 
   const handleDeleteCollection = () => {
-    const accepted = window.confirm(`¿Eliminar la colección "${collection.name}"?`);
+    setShowDeleteModal(true);
     setIsMenuOpen(false);
+  };
 
-    if (!accepted) {
-      return;
-    }
-
+  const handleConfirmDelete = () => {
     onDeleteCollection(collection.id);
+    setShowDeleteModal(false);
   };
 
   const handleExportCollection = () => {
@@ -85,7 +86,15 @@ function CollectionItem({
   };
 
   return (
-    <div className="space-y-2 rounded border border-zinc-200 p-2">
+    <>
+      <DeleteCollectionModal
+        open={showDeleteModal}
+        collectionName={collection.name}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        loading={isDeletingCollection}
+      />
+      <div className="space-y-2 rounded border border-zinc-200 p-2">
       <div className="group flex items-center justify-between gap-2">
         <button
           type="button"
@@ -164,7 +173,8 @@ function CollectionItem({
             ))}
           </div>
         ))}
-    </div>
+      </div>
+    </>
   );
 }
 
