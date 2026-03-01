@@ -124,7 +124,7 @@ export function MockEditor({
           type="button"
           onClick={onTest}
           disabled={isTesting}
-          className="h-11 rounded border border-zinc-900 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-11 rounded border border-orange-500 bg-white px-4 text-sm font-semibold text-orange-500 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isTesting ? "Probando..." : "Probar"}
         </button>
@@ -133,7 +133,7 @@ export function MockEditor({
           type="button"
           onClick={onSave}
           disabled={isSaving}
-          className="h-11 rounded bg-zinc-900 px-5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
+          className="h-11 rounded bg-orange-500 px-5 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving ? "Guardando..." : "Guardar Mock"}
         </button>
@@ -151,7 +151,7 @@ export function MockEditor({
             onClick={() => onTabChange(tab)}
             className={`border-b-2 px-1 py-2 text-sm font-medium ${
               requestTab === tab
-                ? "border-zinc-900 text-zinc-900"
+                ? "border-orange-500 text-orange-500"
                 : "border-transparent text-zinc-500 hover:text-zinc-700"
             }`}
           >

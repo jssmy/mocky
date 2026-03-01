@@ -19,7 +19,8 @@ interface JsonPreview {
 
 // JSON structure types
 type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
-type JsonObject = Record<string, JsonValue>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type JsonObject = Record<string, any>;
 
 interface StorageFormat {
   collections: MockCollection[];
@@ -106,7 +107,7 @@ function extractCollections(data: unknown, timestamp: number): MockCollection[] 
   }
 
   // Case 3: Array of collections
-  if (Array.isArray(data) && data.every((item): item is CollectionData => 
+  if (Array.isArray(data) && data.every((item): item is CollectionData =>
     typeof item === "object" && item !== null && isCollection(item as JsonObject)
   )) {
     return data as MockCollection[];
@@ -138,7 +139,7 @@ function extractCollections(data: unknown, timestamp: number): MockCollection[] 
   }
 
   // Case 7: Array of mock definitions
-  if (Array.isArray(data) && data.every((item): item is MockData => 
+  if (Array.isArray(data) && data.every((item): item is MockData =>
     typeof item === "object" && item !== null && isMockDefinition(item as JsonObject)
   )) {
     return [{
@@ -192,7 +193,7 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
       const parsed = JSON.parse(jsonContent);
       const timestamp = Date.now();
       const collections = extractCollections(parsed, timestamp);
-      
+
       if (collections.length === 0) {
         setError("No se encontraron colecciones o mocks válidos en el JSON");
         return;
@@ -233,26 +234,26 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-[#F2F5FA]/90" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-2xl rounded-lg border border-[#F0B76A] bg-[#F2F5FA] shadow-xl">
+      <div className="relative z-10 w-full max-w-2xl rounded-lg border border-zinc-200 bg-white shadow-xl">
         {/* Header */}
-        <div className="border-b border-[#F0B76A] bg-[#F0B76A] px-5 py-4 rounded-t-lg">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#B8792F]">
+        <div className="border-b border-zinc-200 px-5 py-4">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
             Importar
           </h2>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 border-b border-[#F0B76A] px-5 bg-[#F2F5FA]">
+        <div className="flex gap-4 border-b border-zinc-200 px-5">
           <button
             type="button"
             onClick={() => { setMode('curl'); setError(null); }}
-            className={`border-b-2 py-3 text-sm font-medium transition-colors duration-150 ${
+            className={`border-b-2 py-3 text-sm font-medium transition-colors ${
               mode === 'curl'
-                ? 'border-[#D9963D] text-[#D9963D] bg-[#F2F5FA]'
-                : 'border-transparent text-[#B8792F] hover:text-[#D9963D]'
+                ? 'border-orange-500 text-orange-500'
+                : 'border-transparent text-zinc-500 hover:text-zinc-700'
             }`}
           >
             cURL
@@ -260,10 +261,10 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
           <button
             type="button"
             onClick={() => { setMode('json'); setError(null); }}
-            className={`border-b-2 py-3 text-sm font-medium transition-colors duration-150 ${
+            className={`border-b-2 py-3 text-sm font-medium transition-colors ${
               mode === 'json'
-                ? 'border-[#D9963D] text-[#D9963D] bg-[#F2F5FA]'
-                : 'border-transparent text-[#B8792F] hover:text-[#D9963D]'
+                ? 'border-orange-500 text-orange-500'
+                : 'border-transparent text-zinc-500 hover:text-zinc-700'
             }`}
           >
             JSON
@@ -271,11 +272,11 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
         </div>
 
         {/* Body */}
-        <div className="space-y-4 px-5 py-4 bg-[#F2F5FA]">
+        <div className="space-y-4 px-5 py-4">
           {mode === "curl" ? (
             <>
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-[#B8792F]">
+                <label className="block text-xs font-medium text-zinc-600">
                   Pega tu comando cURL
                 </label>
                 <textarea
@@ -289,7 +290,7 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
   -H 'Content-Type: application/json' \\
   -H 'Authorization: Bearer token' \\
   -d '{"name": "John"}'`}
-                  className="h-32 w-full resize-none rounded border border-[#F0B76A] bg-[#F2F5FA] px-3 py-2 font-mono text-xs outline-none focus:border-[#D9963D]"
+                  className="h-32 w-full resize-none rounded border border-zinc-300 bg-white px-3 py-2 font-mono text-xs outline-none focus:border-zinc-500"
                 />
               </div>
 
@@ -297,34 +298,34 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
                 <button
                   type="button"
                   onClick={handleParseCurl}
-                  className="w-full rounded border border-[#D9963D] bg-[#D9963D] px-4 py-2 text-sm font-medium text-white hover:bg-[#B8792F] transition-colors duration-150"
+                  className="w-full rounded bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
                 >
                   Analizar cURL
                 </button>
               )}
 
               {curlPreview && (
-                <div className="space-y-3 rounded border border-[#F0B76A] bg-[#F0B76A]/20 p-4">
-                  <p className="text-xs font-semibold uppercase text-[#B8792F]">Vista previa</p>
-                  
+                <div className="space-y-3 rounded border border-zinc-200 bg-zinc-50 p-4">
+                  <p className="text-xs font-semibold uppercase text-zinc-500">Vista previa</p>
+
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <p className="font-medium text-[#B8792F]">Método</p>
-                      <p className="mt-1 font-mono text-[#D9963D]">{curlPreview.method}</p>
+                      <p className="font-medium text-zinc-600">Método</p>
+                      <p className="mt-1 font-mono text-orange-500">{curlPreview.method}</p>
                     </div>
                     <div>
-                      <p className="font-medium text-[#B8792F]">Path</p>
-                      <p className="mt-1 font-mono text-[#D9963D]">{curlPreview.path}</p>
+                      <p className="font-medium text-zinc-600">Path</p>
+                      <p className="mt-1 font-mono text-orange-500">{curlPreview.path}</p>
                     </div>
                   </div>
 
                   {curlPreview.params.length > 0 && (
                     <div className="text-xs">
-                      <p className="font-medium text-[#B8792F]">Query Params ({curlPreview.params.length})</p>
+                      <p className="font-medium text-zinc-600">Query Params ({curlPreview.params.length})</p>
                       <div className="mt-1 space-y-0.5">
                         {curlPreview.params.map((param) => (
-                          <p key={param.id} className="font-mono text-[#D9963D]">
-                            <span className="text-[#B8792F]">{param.key}:</span> {param.value}
+                          <p key={param.id} className="font-mono text-orange-500">
+                            <span className="text-zinc-600">{param.key}:</span> {param.value}
                           </p>
                         ))}
                       </div>
@@ -333,11 +334,11 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
 
                   {curlPreview.headers.length > 0 && (
                     <div className="text-xs">
-                      <p className="font-medium text-[#B8792F]">Headers ({curlPreview.headers.length})</p>
+                      <p className="font-medium text-zinc-600">Headers ({curlPreview.headers.length})</p>
                       <div className="mt-1 space-y-0.5">
                         {curlPreview.headers.map((header) => (
-                          <p key={header.id} className="font-mono text-[#D9963D]">
-                            <span className="text-[#B8792F]">{header.key}:</span> {header.value}
+                          <p key={header.id} className="font-mono text-orange-500">
+                            <span className="text-zinc-600">{header.key}:</span> {header.value}
                           </p>
                         ))}
                       </div>
@@ -346,8 +347,8 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
 
                   {curlPreview.body && (
                     <div className="text-xs">
-                      <p className="font-medium text-[#B8792F]">Body</p>
-                      <pre className="mt-1 max-h-24 overflow-auto rounded bg-[#F2F5FA] p-2 font-mono text-[#D9963D]">
+                      <p className="font-medium text-zinc-600">Body</p>
+                      <pre className="mt-1 max-h-24 overflow-auto rounded bg-white border border-zinc-200 p-2 font-mono text-orange-500">
                         {curlPreview.body}
                       </pre>
                     </div>
@@ -358,10 +359,10 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
           ) : (
             <>
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[#B8792F]">
+                <label className="block text-xs font-medium text-zinc-600">
                   Pega JSON o carga un archivo
                 </label>
-                
+
                 <div className="flex gap-2">
                   <input
                     ref={fileInputRef}
@@ -373,7 +374,7 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="rounded border border-[#D9963D] bg-[#D9963D] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#B8792F] transition-colors duration-150"
+                    className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
                   >
                     Seleccionar archivo
                   </button>
@@ -394,7 +395,7 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
     }
   ]
 }`}
-                  className="h-40 w-full resize-none rounded border border-[#F0B76A] bg-[#F2F5FA] px-3 py-2 font-mono text-xs outline-none focus:border-[#D9963D]"
+                  className="h-40 w-full resize-none rounded border border-zinc-300 bg-white px-3 py-2 font-mono text-xs outline-none focus:border-zinc-500"
                 />
               </div>
 
@@ -402,32 +403,32 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
                 <button
                   type="button"
                   onClick={handleParseJson}
-                  className="w-full rounded border border-[#D9963D] bg-[#D9963D] px-4 py-2 text-sm font-medium text-white hover:bg-[#B8792F] transition-colors duration-150"
+                  className="w-full rounded bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
                 >
                   Analizar JSON
                 </button>
               )}
 
               {jsonPreview && (
-                <div className="space-y-3 rounded border border-[#D9963D] bg-[#F0B76A]/20 p-4">
-                  <p className="text-xs font-semibold uppercase text-[#D9963D]">Listo para importar</p>
-                  
+                <div className="space-y-3 rounded border border-zinc-200 bg-zinc-50 p-4">
+                  <p className="text-xs font-semibold uppercase text-orange-500">Listo para importar</p>
+
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <p className="font-medium text-[#B8792F]">Colecciones</p>
-                      <p className="mt-1 text-lg font-bold text-[#D9963D]">{jsonPreview.collections.length}</p>
+                      <p className="font-medium text-zinc-600">Colecciones</p>
+                      <p className="mt-1 text-lg font-bold text-orange-500">{jsonPreview.collections.length}</p>
                     </div>
                     <div>
-                      <p className="font-medium text-[#B8792F]">Mocks totales</p>
-                      <p className="mt-1 text-lg font-bold text-[#D9963D]">{jsonPreview.totalMocks}</p>
+                      <p className="font-medium text-zinc-600">Mocks totales</p>
+                      <p className="mt-1 text-lg font-bold text-orange-500">{jsonPreview.totalMocks}</p>
                     </div>
                   </div>
 
                   <div className="text-xs">
-                    <p className="font-medium text-[#B8792F]">Colecciones a importar:</p>
+                    <p className="font-medium text-zinc-600">Colecciones a importar:</p>
                     <ul className="mt-1 space-y-0.5">
                       {jsonPreview.collections.map((col) => (
-                        <li key={col.id} className="font-mono text-[#D9963D]">
+                        <li key={col.id} className="font-mono text-orange-500">
                           • {col.name} ({col.mocks.length} mocks)
                         </li>
                       ))}
@@ -446,11 +447,11 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 border-t border-[#F0B76A] bg-[#F2F5FA] px-5 py-3 rounded-b-lg">
+        <div className="flex justify-end gap-2 border-t border-zinc-200 px-5 py-3">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded border border-[#D9963D] px-4 py-1.5 text-sm font-medium text-[#D9963D] bg-white hover:bg-[#F0B76A]/40 transition-colors duration-150"
+            className="rounded border border-zinc-300 px-4 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
             Cancelar
           </button>
@@ -458,7 +459,7 @@ export function ImportCurlModal({ onCancel, onImportCurl, onImportJson }: Import
             type="button"
             onClick={handleImport}
             disabled={(mode === 'curl' && !curlPreview) || (mode === 'json' && !jsonPreview)}
-            className="rounded bg-[#D9963D] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#B8792F] disabled:opacity-50 transition-colors duration-150"
+            className="rounded bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
           >
             Importar
           </button>

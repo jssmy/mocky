@@ -43,7 +43,7 @@ export function KeyValueTable({ title, description, rows, onChange }: KeyValueTa
                 type="checkbox"
                 checked={row.enabled}
                 onChange={(event) => updateRow(row.id, { enabled: event.target.checked })}
-                className="h-4 w-4 rounded border-zinc-300"
+                className="h-4 w-4 rounded border-zinc-300 accent-orange-500"
               />
               On
             </label>

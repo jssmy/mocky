@@ -62,10 +62,10 @@ export function SaveMockModal({
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-sm rounded-md border border-zinc-200 bg-white shadow-xl">
+      <div className="relative z-10 w-full max-w-sm rounded-lg border border-zinc-200 bg-white shadow-xl">
         {/* Header */}
         <div className="border-b border-zinc-200 px-5 py-4">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-700">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
             Guardar Mock
           </h2>
         </div>
@@ -121,7 +121,7 @@ export function SaveMockModal({
                           index > 0 ? "border-t border-zinc-100" : ""
                         } ${
                           effectiveSelectedId === collection.id
-                            ? "bg-zinc-900 text-white"
+                            ? "bg-orange-500 text-white"
                             : "bg-white text-zinc-700 hover:bg-zinc-50"
                         }`}
                       >
@@ -134,7 +134,7 @@ export function SaveMockModal({
                         <span
                           className={`text-xs ${
                             effectiveSelectedId === collection.id
-                              ? "text-zinc-200"
+                              ? "text-orange-100"
                               : "text-zinc-400"
                           }`}
                         >
@@ -187,7 +187,7 @@ export function SaveMockModal({
               type="button"
               onClick={() => setIsCreatingNew(true)}
               disabled={isLoading}
-                className="text-xs font-medium text-zinc-900 hover:underline disabled:opacity-50"
+              className="text-xs font-medium text-orange-500 hover:underline disabled:opacity-50"
             >
               + Crear nueva colección
             </button>
@@ -208,7 +208,7 @@ export function SaveMockModal({
             type="button"
             onClick={handleConfirm}
             disabled={isLoading || !effectiveSelectedId || !mockName.trim()}
-            className="flex items-center gap-2 rounded bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="flex items-center gap-2 rounded bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
           >
             {isLoading && <Spinner />}
             Guardar
