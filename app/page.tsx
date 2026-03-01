@@ -439,11 +439,6 @@ export default function Home() {
       return;
     }
 
-    if (!selectedMockId) {
-      setError("Guarda el mock primero para probarlo. El test se ejecuta contra los mocks guardados.");
-      return;
-    }
-
     setIsTesting(true);
     setError(null);
     setTestResult(null);
@@ -467,11 +462,6 @@ export default function Home() {
         if (row.enabled && row.key.trim()) {
           headers[row.key] = row.value;
         }
-      }
-
-      // Send the selected mock ID so the API uses exactly this mock
-      if (selectedMockId) {
-        headers["X-Mocky-Test-Mock-Id"] = selectedMockId;
       }
 
       const response = await fetch(testUrl, {
