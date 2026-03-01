@@ -98,7 +98,7 @@ export default function Home() {
     setError(null);
   };
 
-  const createSnapshot = (collectionId?: string): MockDefinition => ({
+  const createSnapshot = useCallback((collectionId?: string): MockDefinition => ({
     id: crypto.randomUUID(),
     name: `${method} ${pathInput || "/nuevo-endpoint"}`,
     collectionId,
@@ -113,7 +113,16 @@ export default function Home() {
     enabled: true,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-  });
+  }), [
+    method,
+    pathInput,
+    matchParams,
+    matchHeaders,
+    responseBody,
+    responseStatus,
+    responseDelay,
+    responseHeaders,
+  ]);
 
   const clearForm = () => {
     setMethod(HttpMethod.GET);
@@ -433,9 +442,50 @@ export default function Home() {
     }
   };
 
+  const isMockModified = useCallback(() => {
+    if (!selectedMockId) return true; // New unsaved mock
+
+    let originalMock: MockDefinition | null = null;
+    for (const col of collections) {
+      const found = col.mocks.find((m) => m.id === selectedMockId);
+      if (found) {
+        originalMock = found;
+        break;
+      }
+    }
+
+    if (!originalMock) return true;
+
+    const snapshot = createSnapshot();
+
+    if (originalMock.method !== snapshot.method) return true;
+    if (originalMock.path !== snapshot.path) return true;
+    if (originalMock.responseBody !== snapshot.responseBody) return true;
+    if (originalMock.responseStatus !== (snapshot.responseStatus || 200)) return true;
+    if ((originalMock.responseDelay || 0) !== (snapshot.responseDelay || 0)) return true;
+
+    const serializeRows = (rows: KeyValueRow[]) =>
+      JSON.stringify(rows.map((r) => ({ key: r.key, value: r.value, enabled: r.enabled })));
+
+    if (serializeRows(originalMock.matchParams) !== serializeRows(snapshot.matchParams)) return true;
+    if (serializeRows(originalMock.matchHeaders) !== serializeRows(snapshot.matchHeaders)) return true;
+    if (serializeRows(originalMock.responseHeaders) !== serializeRows(snapshot.responseHeaders)) return true;
+
+    return false;
+  }, [
+    selectedMockId,
+    collections,
+    createSnapshot,
+  ]);
+
   const testMock = async () => {
     if (!pathInput.trim()) {
       setError("El path del endpoint es requerido para probar");
+      return;
+    }
+
+    if (isMockModified()) {
+      setError("Hay cambios sin guardar. Por favor, guarda el mock antes de probar para aplicar los cambios.");
       return;
     }
 
