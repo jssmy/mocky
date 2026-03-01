@@ -6,6 +6,18 @@
 
 ---
 
+## 📸 Capturas de pantalla
+
+![Vista general de Mocky](public/preview/preview-mocky.png)
+
+![Guardar mock](public/preview/save-mock-in-mocky.png)
+
+![Importar mock](public/preview/import-mock-in-mocky.png)
+
+![Probar mock](public/preview/testing-mocky.png)
+
+---
+
 ## ✨ Características
 
 - 📁 **Colecciones**: organiza tus mocks agrupados por proyecto o contexto
