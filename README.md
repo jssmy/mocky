@@ -1,121 +1,191 @@
-# 🎭 Mocky - Mock Server with UI
+# 🐙 Mocky
 
-Un servidor de mocks con interfaz visual para crear y gestionar endpoints simulados. Perfecto para desarrollo frontend sin depender de backend real.
+**Mocky** es un servidor de mocks local inspirado en [Postman](https://www.postman.com/), diseñado para que los equipos de frontend puedan simular APIs REST de forma rápida y sin depender del backend. Organiza tus endpoints en colecciones, configura respuestas personalizadas y prueba tus peticiones en tiempo real.
+
+> **Versión:** 1.0.0
+
+---
 
 ## ✨ Características
 
-- **UI Visual**: Interfaz intuitiva para crear y gestionar mocks
-- **Colecciones**: Organiza tus mocks en colecciones
-- **Matching Flexible**: Filtra por método HTTP, path, query params y headers
-- **Respuestas Personalizadas**: Define el body, status code y headers de respuesta
-- **Path Params**: Soporte para rutas dinámicas (`/users/:id`)
-- **Seguridad**: Protección CORS y autenticación por API key
+- 📁 **Colecciones**: organiza tus mocks agrupados por proyecto o contexto
+- 🔧 **Editor visual**: configura método, path, status code, delay, headers y body
+- 🔍 **Match Params / Headers**: filtra cuándo el mock responde según query params o headers exactos
+- 📋 **Importar desde cURL**: pega un comando cURL y genera el mock automáticamente
+- 📦 **Importar / Exportar JSON**: comparte colecciones y mocks entre equipos
+- 🧪 **Probar en vivo**: dispara la petición al endpoint real del mock desde la UI
+- 🔑 **API Keys**: controla el acceso a los endpoints mediante claves
 
-## 🚀 Inicio Rápido
+---
+
+## 🚀 Instalación
+
+### Prerequisitos
+
+- **Node.js** ≥ 18
+- **npm** ≥ 9
+
+### Pasos
 
 ```bash
-# Instalar dependencias
+# 1. Clona el repositorio
+git clone https://github.com/tu-usuario/mocky.git
+cd mocky
+
+# 2. Instala las dependencias
 npm install
 
-# Iniciar servidor de desarrollo
+# 3. Copia el archivo de variables de entorno
+cp .env.example .env.local
+```
+
+---
+
+## ⚙️ Configuración
+
+Edita `.env.local` con tus valores:
+
+```env
+# Orígenes permitidos para acceder al panel de administración (/api/mocks)
+MOCK_ADMIN_ORIGINS=http://localhost:3000
+
+# Orígenes permitidos para consumir los endpoints mock (/api/mock/*)
+MOCK_CONSUMER_ORIGINS=
+
+# API Keys para consumidores externos (separadas por coma)
+MOCK_API_KEYS=mi-clave-secreta,otra-clave
+```
+
+| Variable                | Descripción                               | Ejemplo                   |
+| ----------------------- | ----------------------------------------- | ------------------------- |
+| `MOCK_ADMIN_ORIGINS`    | Orígenes con acceso al panel admin        | `http://localhost:3000`   |
+| `MOCK_CONSUMER_ORIGINS` | Orígenes que pueden consumir los mocks    | `https://mi-frontend.com` |
+| `MOCK_API_KEYS`         | Claves de acceso para peticiones externas | `clave1,clave2`           |
+
+---
+
+## 🖥️ Levantar el servidor
+
+### Modo desarrollo
+
+```bash
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) para acceder a la UI.
+La app estará disponible en **[http://localhost:3000](http://localhost:3000)**.
 
-## 📖 Uso
+### Modo producción
 
-### Crear un Mock
-
-1. Define el **método HTTP** (GET, POST, PUT, DELETE, etc.)
-2. Ingresa el **path** del endpoint (ej: `/users`, `/products/:id`)
-3. (Opcional) Agrega **params** y **headers** para matching específico
-4. Define el **response body** que devolverá el mock
-5. Selecciona el **status code** de respuesta
-6. Haz clic en **Guardar Mock**
-
-### Consumir Mocks
-
-Los mocks están disponibles en:
-
-```
-GET/POST/etc  /api/mock/[tu-endpoint]
-```
-
-**Ejemplo:**
-- Mock path: `/users`
-- URL completa: `http://localhost:3000/api/mock/users`
-
-### Matching de Peticiones
-
-Cuando una petición llega al mock server:
-
-1. Busca mocks que coincidan con el **método HTTP** y **path**
-2. Si el mock tiene **params** definidos, la petición debe incluirlos exactamente
-3. Si el mock tiene **headers** definidos, la petición debe incluirlos exactamente
-4. El mock más específico (más criterios de matching) tiene prioridad
-
-## 🔒 Seguridad
-
-### Protección CORS
-
-Por defecto, los mocks solo son accesibles desde el mismo origen donde está desplegado Mocky.
-
-Para permitir acceso desde otros orígenes, configura en `.env.local`:
-
-```env
-# Orígenes permitidos para consumir mocks
-MOCK_CONSUMER_ORIGINS=https://tu-frontend.com,https://otro-frontend.com
-```
-
-### Autenticación por API Key
-
-Para acceso externo, los consumidores deben incluir un header `X-API-Key`:
-
-```env
-# API keys válidas (separadas por coma)
-MOCK_API_KEYS=key1,key2,key3
-```
-
-**Uso:**
 ```bash
-curl -H "X-API-Key: key1" http://tu-mocky-server/api/mock/users
+npm run build
+npm run start
 ```
 
-### Protección del Admin
+---
 
-La UI de administración solo acepta peticiones del mismo origen por defecto:
+## 📖 Cómo usar
 
-```env
-# Orígenes adicionales para el admin
-MOCK_ADMIN_ORIGINS=http://localhost:3000
+### 1. Crear una colección
+
+En el panel izquierdo, escribe el nombre de la colección en el campo **"Nueva colección"** y haz clic en **Crear**.
+
+### 2. Crear un mock
+
+1. Haz clic en **+ Nuevo Mock** en la barra lateral
+2. Configura el **método HTTP** (GET, POST, PUT, DELETE, etc.)
+3. Escribe el **path** del endpoint (ej. `/users/:id`)
+4. Selecciona el **status code** de la respuesta
+5. Opcionalmente configura un **delay** en milisegundos
+6. En las pestañas puedes agregar:
+   - **Match Params**: query params que deben coincidir exactamente
+   - **Match Headers**: headers requeridos en la petición
+   - **Response Headers**: headers de la respuesta
+7. En el editor inferior escribe el **body de la respuesta** (JSON)
+8. Haz clic en **Guardar Mock** y selecciona la colección
+
+### 3. Consumir el mock
+
+Una vez guardado, el mock queda disponible en:
+
+```
+http://localhost:3000/api/mock/{tu-endpoint}
 ```
 
-## 📁 Estructura
+Ejemplo: si el path es `/users/42`, la URL es:
+
+```
+http://localhost:3000/api/mock/users/42
+```
+
+### 4. Importar desde cURL
+
+1. Haz clic en **Importar** (esquina superior derecha)
+2. En la pestaña **cURL**, pega tu comando
+3. Haz clic en **Analizar cURL** — se generará un preview
+4. Confirma con **Importar**
+
+### 5. Importar / Exportar colecciones
+
+- **Exportar**: en el menú `...` de la colección, selecciona **Exportar** — descarga un archivo `.json`
+- **Importar**: usa el modal de Importar, pestaña **JSON**, y pega o carga el archivo
+
+---
+
+## 🏗️ Arquitectura
 
 ```
 mocky/
 ├── app/
 │   ├── api/
-│   │   ├── mock/[...path]/     # Handler de mocks (catch-all)
-│   │   └── mocks/              # CRUD de definiciones de mocks
-│   ├── components/postman/     # Componentes de UI
-│   ├── lib/                    # Utilities y storage
-│   └── page.tsx                # Página principal
-├── data/
-│   └── mocks.json              # Almacenamiento de mocks
-└── .env.local                  # Configuración (crear desde .env.example)
+│   │   ├── mock/[...path]/     # Handler dinámico — sirve los mocks al mundo
+│   │   └── mocks/              # API REST interna para CRUD de colecciones
+│   ├── components/
+│   │   └── postman/            # Todos los componentes de la UI
+│   │       ├── MockEditor.tsx      # Editor principal (método, path, tabs)
+│   │       ├── Sidebar.tsx         # Sidebar con colecciones y mocks
+│   │       ├── KeyValueTable.tsx   # Tabla de params/headers editable
+│   │       ├── SaveMockModal.tsx   # Modal para guardar un mock
+│   │       ├── RenameModal.tsx     # Modal para renombrar
+│   │       ├── DeleteModal.tsx     # Modal de confirmación de borrado
+│   │       ├── ImportCurlModal.tsx # Modal de importación cURL / JSON
+│   │       └── ui/                 # Componentes base (Spinner, Logo)
+│   ├── lib/                    # Utilidades del servidor (persistencia)
+│   ├── page.tsx                # Página principal (orquesta todo el estado)
+│   └── globals.css
+├── data/                       # Almacenamiento en disco (JSON)
+├── .env.example
+└── package.json
 ```
 
-## 🛠️ Configuración
+### Flujo de datos
 
-Copia `.env.example` a `.env.local` y ajusta según necesites:
-
-```bash
-cp .env.example .env.local
+```
+Usuario (UI)
+    │
+    ▼
+page.tsx  ──────► /api/mocks  (CRUD colecciones, persistido en /data)
+    │
+    ▼
+MockEditor / Sidebar / Modals
+    │
+    ▼
+/api/mock/[...path]  ◄──── petición desde tu frontend / cURL / Postman
 ```
 
-## 📝 Licencia
+---
 
-MIT
+## 🛠️ Tecnologías
 
+| Tecnología                                    | Versión | Rol                                   |
+| --------------------------------------------- | ------- | ------------------------------------- |
+| [Next.js](https://nextjs.org/)                | 16      | Framework full-stack (App Router)     |
+| [React](https://react.dev/)                   | 19      | UI                                    |
+| [TypeScript](https://www.typescriptlang.org/) | 5       | Tipado estático                       |
+| [Tailwind CSS](https://tailwindcss.com/)      | 4       | Estilos                               |
+| Node.js File System                           | —       | Persistencia de mocks en disco (JSON) |
+
+---
+
+## 📄 Licencia
+
+MIT © Mocky Contributors
