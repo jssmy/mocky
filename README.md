@@ -1,4 +1,8 @@
-# 🐙 Mocky
+<p align="center">
+  <img src="public/logo.webp" alt="Mocky logo" width="80" />
+</p>
+
+# Mocky
 
 **Mocky** es un servidor de mocks local inspirado en [Postman](https://www.postman.com/), diseñado para que los equipos de frontend puedan simular APIs REST de forma rápida y sin depender del backend. Organiza tus endpoints en colecciones, configura respuestas personalizadas y prueba tus peticiones en tiempo real.
 
