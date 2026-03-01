@@ -53,7 +53,10 @@ export async function findMatchingMock(
 ): Promise<MockDefinition | null> {
   const mocks = await getAllMocks();
   const normalizedMethod = method.toUpperCase();
-  const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  let normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  if (normalizedPath.length > 1 && normalizedPath.endsWith("/")) {
+    normalizedPath = normalizedPath.slice(0, -1);
+  }
 
   // Filter enabled mocks that match method and path
   const candidates = mocks.filter((mock) => {
@@ -61,7 +64,10 @@ export async function findMatchingMock(
     if (mock.method.toUpperCase() !== normalizedMethod) return false;
     
     // Normalize mock path
-    const mockPath = mock.path.startsWith("/") ? mock.path : `/${mock.path}`;
+    let mockPath = mock.path.startsWith("/") ? mock.path : `/${mock.path}`;
+    if (mockPath.length > 1 && mockPath.endsWith("/")) {
+      mockPath = mockPath.slice(0, -1);
+    }
     
     // Exact path match or pattern match (simple :param support)
     if (mockPath === normalizedPath) return true;
