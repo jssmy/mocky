@@ -5,8 +5,10 @@ services:
       context: .
       dockerfile: Dockerfile
     image: mocky:latest
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
+    networks:
+      - gateway-network
     environment:
       MOCK_ADMIN_ORIGINS: ${MOCK_ADMIN_ORIGINS:-http://localhost:3000}
       MOCK_ADMIN_API_KEYS: ${MOCK_ADMIN_API_KEYS:-}
@@ -16,3 +18,8 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
+
+networks:
+  gateway-network:
+    name: gateway-network
+    external: true
