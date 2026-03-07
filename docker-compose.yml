@@ -1,0 +1,18 @@
+services:
+  mocky:
+    container_name: mocky
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mocky:latest
+    ports:
+      - "3000:3000"
+    environment:
+      MOCK_ADMIN_ORIGINS: ${MOCK_ADMIN_ORIGINS:-http://localhost:3000}
+      MOCK_ADMIN_API_KEYS: ${MOCK_ADMIN_API_KEYS:-}
+      MOCK_CONSUMER_ORIGINS: ${MOCK_CONSUMER_ORIGINS:-}
+      MOCK_API_KEYS: ${MOCK_API_KEYS:-}
+      MOCK_ALLOW_HTML_RESPONSES: ${MOCK_ALLOW_HTML_RESPONSES:-false}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
