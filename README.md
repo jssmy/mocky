@@ -65,18 +65,29 @@ Edita `.env.local` con tus valores:
 # Orígenes permitidos para acceder al panel de administración (/api/mocks)
 MOCK_ADMIN_ORIGINS=http://localhost:3000
 
+# API Keys para administración por API (/api/mocks)
+MOCK_ADMIN_API_KEYS=admin-key-1,admin-key-2
+
 # Orígenes permitidos para consumir los endpoints mock (/api/mock/*)
 MOCK_CONSUMER_ORIGINS=
 
 # API Keys para consumidores externos (separadas por coma)
 MOCK_API_KEYS=mi-clave-secreta,otra-clave
+
+# Permitir respuestas HTML automáticas si el body inicia con '<'
+# Recomendado: false
+MOCK_ALLOW_HTML_RESPONSES=false
 ```
 
-| Variable                | Descripción                               | Ejemplo                   |
-| ----------------------- | ----------------------------------------- | ------------------------- |
-| `MOCK_ADMIN_ORIGINS`    | Orígenes con acceso al panel admin        | `http://localhost:3000`   |
-| `MOCK_CONSUMER_ORIGINS` | Orígenes que pueden consumir los mocks    | `https://mi-frontend.com` |
-| `MOCK_API_KEYS`         | Claves de acceso para peticiones externas | `clave1,clave2`           |
+| Variable                     | Descripción                                                       | Ejemplo                   |
+| ---------------------------- | ----------------------------------------------------------------- | ------------------------- |
+| `MOCK_ADMIN_ORIGINS`         | Orígenes con acceso al panel admin                                | `http://localhost:3000`   |
+| `MOCK_ADMIN_API_KEYS`        | Claves para administrar `/api/mocks` (GET/POST)                   | `admin1,admin2`           |
+| `MOCK_CONSUMER_ORIGINS`      | Orígenes que pueden consumir los mocks                            | `https://mi-frontend.com` |
+| `MOCK_API_KEYS`              | Claves de acceso para consumir `/api/mock/*` desde clientes externos | `clave1,clave2`        |
+| `MOCK_ALLOW_HTML_RESPONSES`  | Si `true`, permite autoseleccionar `text/html` para cuerpos HTML  | `false`                   |
+
+Nota de seguridad: se recomienda usar API keys en producción para `admin` y `consumer`, y mantener `MOCK_ALLOW_HTML_RESPONSES=false`.
 
 ---
 
@@ -96,6 +107,30 @@ La app estará disponible en **[http://localhost:3000](http://localhost:3000)**.
 npm run build
 npm run start
 ```
+
+### Docker (imagen de produccion)
+
+Construir imagen:
+
+```bash
+docker build -t mocky:latest .
+```
+
+Ejecutar contenedor:
+
+```bash
+docker run --rm -p 3000:3000 \
+    -e MOCK_ADMIN_ORIGINS=http://localhost:3000 \
+    -e MOCK_CONSUMER_ORIGINS= \
+    -e MOCK_API_KEYS= \
+    -e MOCK_ADMIN_API_KEYS= \
+    -e MOCK_ALLOW_HTML_RESPONSES=false \
+    -v $(pwd)/data:/app/data \
+    --name mocky \
+    mocky:latest
+```
+
+La app quedara disponible en `http://localhost:3000`.
 
 ---
 

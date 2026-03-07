@@ -48,7 +48,7 @@ interface MockData {
   method: string;
   path: string;
   name?: string;
-  [key: string]: JsonValue;
+  [key: string]: JsonValue | undefined;
 }
 
 // Helper type guards with proper typing
