@@ -8,11 +8,40 @@ const ALLOWED_ORIGINS = (process.env.MOCK_ADMIN_ORIGINS ?? "")
   .map((o) => o.trim())
   .filter(Boolean);
 
-function isAllowedOrigin(request: NextRequest): boolean {
+const ADMIN_API_KEYS = (process.env.MOCK_ADMIN_API_KEYS ?? "")
+  .split(",")
+  .map((k) => k.trim())
+  .filter(Boolean);
+
+function getRequestOrigin(request: NextRequest): string | null {
   const origin = request.headers.get("origin");
-  
-  // Same-origin requests are always allowed
-  if (!origin || origin === request.nextUrl.origin) {
+  if (origin) return origin;
+
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+
+  try {
+    return new URL(referer).origin;
+  } catch {
+    return null;
+  }
+}
+
+function hasValidAdminApiKey(request: NextRequest): boolean {
+  const apiKey = request.headers.get("x-api-key")?.trim();
+  if (!apiKey) return false;
+  return ADMIN_API_KEYS.includes(apiKey);
+}
+
+function isAllowedOrigin(request: NextRequest): boolean {
+  const origin = getRequestOrigin(request);
+
+  if (!origin) {
+    return false;
+  }
+
+  // Same-origin requests are allowed
+  if (origin === request.nextUrl.origin) {
     return true;
   }
   
@@ -50,7 +79,7 @@ export async function OPTIONS(request: NextRequest) {
 
 // Get all collections
 export async function GET(request: NextRequest) {
-  if (!isAllowedOrigin(request)) {
+  if (!isAllowedOrigin(request) && !hasValidAdminApiKey(request)) {
     return withCors(request, NextResponse.json({ error: "Forbidden" }, { status: 403 }));
   }
   
@@ -65,7 +94,7 @@ export async function GET(request: NextRequest) {
 
 // Create or update collections (full replace)
 export async function POST(request: NextRequest) {
-  if (!isAllowedOrigin(request)) {
+  if (!isAllowedOrigin(request) && !hasValidAdminApiKey(request)) {
     return withCors(request, NextResponse.json({ error: "Forbidden" }, { status: 403 }));
   }
   

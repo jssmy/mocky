@@ -14,17 +14,36 @@ const MOCK_API_KEYS = (process.env.MOCK_API_KEYS ?? "")
   .map((k) => k.trim())
   .filter(Boolean);
 
-function isAuthorized(request: NextRequest): boolean {
+const MOCK_ALLOW_HTML_RESPONSES = process.env.MOCK_ALLOW_HTML_RESPONSES === "true";
+
+function getRequestOrigin(request: NextRequest): string | null {
   const origin = request.headers.get("origin");
-  
-  // Same-origin requests are always allowed (for testing from the UI)
-  if (!origin || origin === request.nextUrl.origin) {
+  if (origin) return origin;
+
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+
+  try {
+    return new URL(referer).origin;
+  } catch {
+    return null;
+  }
+}
+
+function isAuthorized(request: NextRequest): boolean {
+  // Check API key
+  const apiKey = request.headers.get("x-api-key")?.trim();
+  if (apiKey && MOCK_API_KEYS.includes(apiKey)) {
     return true;
   }
-  
-  // Check API key
-  const apiKey = request.headers.get("x-api-key");
-  if (apiKey && MOCK_API_KEYS.includes(apiKey)) {
+
+  const origin = getRequestOrigin(request);
+  if (!origin) {
+    return false;
+  }
+
+  // Same-origin requests are allowed (for testing from the UI)
+  if (origin === request.nextUrl.origin) {
     return true;
   }
   
@@ -123,6 +142,7 @@ async function handleMockRequest(
     const responseHeaders = new Headers(corsHeaders);
     responseHeaders.set("X-Mocky-Mock-Id", mock.id);
     responseHeaders.set("X-Mocky-Mock-Name", encodeURIComponent(mock.name));
+    responseHeaders.set("X-Content-Type-Options", "nosniff");
     
     // Add custom response headers from mock definition
     for (const header of mock.responseHeaders) {
@@ -137,7 +157,7 @@ async function handleMockRequest(
       if (trimmedBody.startsWith("{") || trimmedBody.startsWith("[")) {
         responseHeaders.set("Content-Type", "application/json");
       } else if (trimmedBody.startsWith("<")) {
-        responseHeaders.set("Content-Type", "text/html");
+        responseHeaders.set("Content-Type", MOCK_ALLOW_HTML_RESPONSES ? "text/html" : "text/plain");
       } else {
         responseHeaders.set("Content-Type", "text/plain");
       }
